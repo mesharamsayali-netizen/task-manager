@@ -62,7 +62,18 @@ class ApiService {
         headers,
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: text || `Request failed with status ${response.status}` };
+        }
+      }
 
       if (!response.ok) {
         throw new Error(data.message || `Request failed with status ${response.status}`);
