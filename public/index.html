@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A modern, responsive full-stack Task Management productivity dashboard with Kanban board, calendar, analytics, and MongoDB backend.">
+  <meta name="keywords" content="task manager, productivity, kanban board, calendar, express, nodejs, mongodb">
+  <meta name="author" content="TaskFlow Studio">
+  <title>TaskFlow Pro — Modern Task Management & Productivity Dashboard</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container" id="app">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+          <div class="logo-text">
+            <h2>TaskFlow<span>.pro</span></h2>
+            <span class="subtext">Productivity Suite</span>
+          </div>
+        </div>
+        <button class="icon-btn mobile-close-btn" id="sidebarCloseBtn" aria-label="Close Sidebar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-title">MAIN MENU</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a href="#dashboard" class="nav-link active" data-view="dashboard" id="navDashboard">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#tasks" class="nav-link" data-view="tasks" id="navTasks">
+              <i class="fa-solid fa-list-check"></i>
+              <span>All Tasks</span>
+              <span class="badge" id="sidebarTotalBadge">0</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#kanban" class="nav-link" data-view="kanban" id="navKanban">
+              <i class="fa-solid fa-table-columns"></i>
+              <span>Kanban Board</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#calendar" class="nav-link" data-view="calendar" id="navCalendar">
+              <i class="fa-regular fa-calendar-days"></i>
+              <span>Calendar</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#analytics" class="nav-link" data-view="analytics" id="navAnalytics">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>Analytics</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="nav-group-title">CATEGORIES</div>
+        <ul class="nav-list category-filters">
+          <li>
+            <button class="category-pill-btn active" data-category="All">
+              <span class="cat-dot cat-all"></span> All Tasks
+            </button>
+          </li>
+          <li>
+            <button class="category-pill-btn" data-category="Work">
+              <span class="cat-dot cat-work"></span> Work
+            </button>
+          </li>
+          <li>
+            <button class="category-pill-btn" data-category="College">
+              <span class="cat-dot cat-college"></span> College
+            </button>
+          </li>
+          <li>
+            <button class="category-pill-btn" data-category="Projects">
+              <span class="cat-dot cat-projects"></span> Projects
+            </button>
+          </li>
+          <li>
+            <button class="category-pill-btn" data-category="Personal">
+              <span class="cat-dot cat-personal"></span> Personal
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Productivity Summary Widget -->
+      <div class="sidebar-widget">
+        <div class="widget-header">
+          <span>Weekly Goal</span>
+          <span class="percentage" id="sidebarProgressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="sidebarProgressBar" style="width: 0%;"></div>
+        </div>
+        <p class="widget-subtext" id="sidebarProgressText">0 of 0 tasks completed</p>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-badge" id="userProfileBadge">
+          <div class="user-avatar" id="sidebarAvatar">G</div>
+          <div class="user-info">
+            <span class="user-name" id="sidebarUserName">Guest Workspace</span>
+            <span class="user-email" id="sidebarUserEmail">Offline / Demo mode</span>
+          </div>
+          <button class="icon-btn auth-toggle-btn" id="authBtn" title="Account Settings / Login">
+            <i class="fa-solid fa-right-to-bracket" id="authIcon"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR OVERLAY FOR MOBILE -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <main class="main-wrapper">
+      <!-- TOP NAVIGATION BAR -->
+      <header class="top-nav">
+        <div class="top-nav-left">
+          <button class="icon-btn menu-toggle" id="menuToggleBtn" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="page-heading">
+            <h1 id="pageTitle">Dashboard Overview</h1>
+            <p id="pageSubtitle">Track, organize and achieve your daily productivity targets</p>
+          </div>
+        </div>
+
+        <div class="top-nav-right">
+          <!-- Quick Search -->
+          <div class="quick-search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search tasks... (Press '/' to focus)" aria-label="Search tasks">
+            <kbd class="search-kbd">/</kbd>
+          </div>
+
+          <!-- Dark/Light Theme Toggle -->
+          <button class="icon-btn theme-toggle" id="themeToggleBtn" aria-label="Toggle theme" title="Toggle Light/Dark Theme">
+            <i class="fa-solid fa-sun light-icon"></i>
+            <i class="fa-solid fa-moon dark-icon"></i>
+          </button>
+
+          <!-- Create Task Button -->
+          <button class="btn btn-primary" id="openCreateTaskBtn">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Task</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW CONTAINER -->
+      <div class="content-body" id="contentBody">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section class="view-section active" id="viewDashboard">
+          <!-- Metric Cards Grid -->
+          <div class="stats-grid">
+            <div class="stat-card" style="--accent-color: #6366f1;">
+              <div class="stat-icon-wrapper" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Total Tasks</span>
+                <h3 class="stat-number" id="statTotal">0</h3>
+                <span class="stat-trend"><i class="fa-solid fa-database"></i> All registered tasks</span>
+              </div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #10b981;">
+              <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Completed</span>
+                <h3 class="stat-number" id="statCompleted">0</h3>
+                <span class="stat-trend positive" id="statCompletionRateBadge"><i class="fa-solid fa-arrow-trend-up"></i> 0% Done</span>
+              </div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #f59e0b;">
+              <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">In Progress</span>
+                <h3 class="stat-number" id="statInProgress">0</h3>
+                <span class="stat-trend"><i class="fa-solid fa-clock"></i> Active work in flight</span>
+              </div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #8b5cf6;">
+              <div class="stat-icon-wrapper" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">To Do</span>
+                <h3 class="stat-number" id="statPending">0</h3>
+                <span class="stat-trend"><i class="fa-regular fa-calendar"></i> Backlog queue</span>
+              </div>
+            </div>
+
+            <div class="stat-card" style="--accent-color: #ef4444;">
+              <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Overdue</span>
+                <h3 class="stat-number" id="statOverdue">0</h3>
+                <span class="stat-trend negative"><i class="fa-solid fa-bell"></i> Requires urgent attention</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="dashboard-charts-row">
+            <div class="card chart-card flex-2">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-chart-area"></i>
+                  <h3>Weekly Productivity Velocity</h3>
+                </div>
+                <span class="badge badge-purple">7-Day Activity</span>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="velocityChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card chart-card flex-1">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-chart-pie"></i>
+                  <h3>Status Breakdown</h3>
+                </div>
+              </div>
+              <div class="chart-wrapper doughnut-wrapper">
+                <canvas id="statusChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Split Section: Tasks Due Today & Recent Tasks -->
+          <div class="dashboard-split-row">
+            <!-- Due Today & Urgent -->
+            <div class="card list-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-regular fa-calendar-check"></i>
+                  <h3>Due Today & Upcoming</h3>
+                </div>
+                <a href="#tasks" class="view-all-link" data-view="tasks">View all</a>
+              </div>
+              <div class="dashboard-task-list" id="dueTodayTaskList">
+                <!-- Dynamically injected -->
+              </div>
+            </div>
+
+            <!-- Recent Tasks Activity -->
+            <div class="card list-card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                  <h3>Recently Created Tasks</h3>
+                </div>
+                <button class="btn-text" id="quickAddRecentBtn">+ Add New</button>
+              </div>
+              <div class="dashboard-task-list" id="recentTaskList">
+                <!-- Dynamically injected -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. ALL TASKS LIST VIEW -->
+        <section class="view-section" id="viewTasks">
+          <!-- Filter and Search Toolbar -->
+          <div class="card filter-toolbar">
+            <div class="filter-row">
+              <div class="filter-item search-filter">
+                <label for="taskSearchInput">Search</label>
+                <div class="input-icon-wrap">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="taskSearchInput" placeholder="Search by title or description..." class="form-control">
+                </div>
+              </div>
+
+              <div class="filter-item">
+                <label for="filterStatus">Status</label>
+                <select id="filterStatus" class="form-control">
+                  <option value="All">All Statuses</option>
+                  <option value="To Do">To Do</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+
+              <div class="filter-item">
+                <label for="filterPriority">Priority</label>
+                <select id="filterPriority" class="form-control">
+                  <option value="All">All Priorities</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+
+              <div class="filter-item">
+                <label for="filterCategory">Category</label>
+                <select id="filterCategory" class="form-control">
+                  <option value="All">All Categories</option>
+                  <option value="Work">Work</option>
+                  <option value="College">College</option>
+                  <option value="Projects">Projects</option>
+                  <option value="Personal">Personal</option>
+                </select>
+              </div>
+
+              <div class="filter-item">
+                <label for="filterDueDate">Due Date</label>
+                <select id="filterDueDate" class="form-control">
+                  <option value="All">All Dates</option>
+                  <option value="today">Due Today</option>
+                  <option value="this_week">Due This Week</option>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+
+              <div class="filter-item">
+                <label for="sortTasks">Sort By</label>
+                <select id="sortTasks" class="form-control">
+                  <option value="createdAt_desc">Newest First</option>
+                  <option value="createdAt_asc">Oldest First</option>
+                  <option value="dueDate_asc">Due Date (Earliest)</option>
+                  <option value="dueDate_desc">Due Date (Latest)</option>
+                  <option value="priority_desc">Priority (High to Low)</option>
+                </select>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn btn-secondary" id="clearFiltersBtn" title="Reset all filters">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  <span>Clear Filters</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks List Container -->
+          <div class="tasks-table-wrapper">
+            <div class="tasks-header-bar">
+              <div class="tasks-count-info">
+                Showing <strong id="currentTasksCount">0</strong> of <strong id="totalTasksCount">0</strong> tasks
+              </div>
+              <div class="view-mode-toggle">
+                <button class="mode-btn active" id="modeGridBtn" title="Card View"><i class="fa-solid fa-grip"></i></button>
+                <button class="mode-btn" id="modeListBtn" title="List Table View"><i class="fa-solid fa-list"></i></button>
+              </div>
+            </div>
+
+            <!-- Task Cards Grid/List Container -->
+            <div class="tasks-grid-container" id="tasksGridContainer">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-bar" id="paginationBar">
+              <button class="btn btn-outline" id="prevPageBtn" disabled>
+                <i class="fa-solid fa-chevron-left"></i> Prev
+              </button>
+              <div class="pagination-pages" id="paginationNumbers">
+                <span class="page-chip active">1</span>
+              </div>
+              <button class="btn btn-outline" id="nextPageBtn" disabled>
+                Next <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. KANBAN BOARD VIEW -->
+        <section class="view-section" id="viewKanban">
+          <div class="kanban-header-bar">
+            <div class="kanban-title-info">
+              <h2>Interactive Kanban Workflow</h2>
+              <p>Drag and drop task cards between columns to seamlessly sync status with MongoDB</p>
+            </div>
+            <button class="btn btn-primary" id="kanbanAddTaskBtn">
+              <i class="fa-solid fa-plus"></i> Add Card
+            </button>
+          </div>
+
+          <div class="kanban-board-container" id="kanbanBoard">
+            <!-- Column 1: To Do -->
+            <div class="kanban-column" data-status="To Do" id="kanbanColToDo">
+              <div class="kanban-column-header">
+                <div class="column-title">
+                  <span class="status-indicator to-do"></span>
+                  <h3>To Do</h3>
+                  <span class="column-count" id="countColToDo">0</span>
+                </div>
+                <button class="icon-btn quick-col-add" data-status="To Do" title="Add To Do Task">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </div>
+              <div class="kanban-drop-zone" id="dropZoneToDo" data-status="To Do">
+                <!-- Cards injected here -->
+              </div>
+            </div>
+
+            <!-- Column 2: In Progress -->
+            <div class="kanban-column" data-status="In Progress" id="kanbanColInProgress">
+              <div class="kanban-column-header">
+                <div class="column-title">
+                  <span class="status-indicator in-progress"></span>
+                  <h3>In Progress</h3>
+                  <span class="column-count" id="countColInProgress">0</span>
+                </div>
+                <button class="icon-btn quick-col-add" data-status="In Progress" title="Add In-Progress Task">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </div>
+              <div class="kanban-drop-zone" id="dropZoneInProgress" data-status="In Progress">
+                <!-- Cards injected here -->
+              </div>
+            </div>
+
+            <!-- Column 3: Completed -->
+            <div class="kanban-column" data-status="Completed" id="kanbanColCompleted">
+              <div class="kanban-column-header">
+                <div class="column-title">
+                  <span class="status-indicator completed"></span>
+                  <h3>Completed</h3>
+                  <span class="column-count" id="countColCompleted">0</span>
+                </div>
+                <button class="icon-btn quick-col-add" data-status="Completed" title="Add Completed Task">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </div>
+              <div class="kanban-drop-zone" id="dropZoneCompleted" data-status="Completed">
+                <!-- Cards injected here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. CALENDAR VIEW -->
+        <section class="view-section" id="viewCalendar">
+          <div class="calendar-wrapper card">
+            <div class="calendar-controls">
+              <div class="calendar-nav-buttons">
+                <button class="btn btn-outline" id="calPrevMonthBtn"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                <button class="btn btn-secondary" id="calTodayBtn">Today</button>
+                <button class="btn btn-outline" id="calNextMonthBtn">Next <i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              <h2 class="calendar-month-title" id="calMonthTitle">October 2026</h2>
+              <div class="calendar-legend">
+                <span class="legend-item"><span class="dot dot-high"></span> High</span>
+                <span class="legend-item"><span class="dot dot-medium"></span> Medium</span>
+                <span class="legend-item"><span class="dot dot-low"></span> Low</span>
+                <span class="legend-item"><span class="dot dot-done"></span> Completed</span>
+              </div>
+            </div>
+
+            <!-- Calendar Days Header -->
+            <div class="calendar-grid-header">
+              <span>Sun</span>
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+            </div>
+
+            <!-- Calendar Month Days Grid -->
+            <div class="calendar-days-grid" id="calendarDaysGrid">
+              <!-- Dynamically generated days & task items -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. PRODUCTIVITY & ANALYTICS VIEW -->
+        <section class="view-section" id="viewAnalytics">
+          <div class="analytics-header">
+            <h2>Productivity Insights & Performance</h2>
+            <p>Detailed breakdown of task metrics, completion speed, and category allocations</p>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="card analytics-card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-bullseye"></i> Category Distribution</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card analytics-card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-signal"></i> Priority Breakdown</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="priorityChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card productivity-summary-card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-gauge-high"></i>
+                <h3>Productivity Scorecard</h3>
+              </div>
+            </div>
+            <div class="productivity-metrics-list" id="productivityScorecard">
+              <!-- Scorecard items dynamically injected -->
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- CREATE / EDIT TASK MODAL -->
+    <div class="modal-backdrop" id="taskModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="taskModalTitle"><i class="fa-solid fa-pen-to-square"></i> Create New Task</h3>
+          <button class="icon-btn modal-close-btn" id="closeTaskModalBtn" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <form id="taskForm" class="modal-form">
+          <input type="hidden" id="taskIdInput">
+
+          <div class="form-group">
+            <label for="taskTitleInput" class="required">Task Title</label>
+            <input type="text" id="taskTitleInput" class="form-control" placeholder="e.g. Prepare Quarter 4 Client Presentation" required maxlength="150">
+            <div class="field-error" id="titleError"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="taskDescInput">Description</label>
+            <textarea id="taskDescInput" class="form-control" rows="3" placeholder="Provide context, subtasks, or reference links..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="taskCategoryInput" class="required">Category</label>
+              <select id="taskCategoryInput" class="form-control" required>
+                <option value="Work">Work</option>
+                <option value="College">College</option>
+                <option value="Projects">Projects</option>
+                <option value="Personal">Personal</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="taskPriorityInput" class="required">Priority</label>
+              <select id="taskPriorityInput" class="form-control" required>
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="taskStatusInput" class="required">Status</label>
+              <select id="taskStatusInput" class="form-control" required>
+                <option value="To Do" selected>To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="taskDueDateInput">Due Date</label>
+              <input type="date" id="taskDueDateInput" class="form-control">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelTaskModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveTaskBtn">
+              <i class="fa-solid fa-floppy-disk"></i> Save Task
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TASK DETAILS PREVIEW MODAL -->
+    <div class="modal-backdrop" id="taskDetailsModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-circle-info"></i> Task Details</h3>
+          <button class="icon-btn modal-close-btn" id="closeDetailsModalBtn" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body" id="taskDetailsContent">
+          <!-- Injected dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="closeDetailsBtn">Close</button>
+          <button type="button" class="btn btn-primary" id="editFromDetailsBtn">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Task
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal-backdrop" id="deleteModal">
+      <div class="modal-dialog modal-danger">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-triangle-exclamation"></i> Confirm Task Deletion</h3>
+          <button class="icon-btn modal-close-btn" id="closeDeleteModalBtn" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to permanently delete task: <strong id="deleteTaskTitle"></strong>?</p>
+          <p class="modal-warning-subtext">This action cannot be undone and will remove it from the database.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="fa-solid fa-trash-can"></i> Delete Permanently
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER AUTHENTICATION MODAL (LOGIN / REGISTER) -->
+    <div class="modal-backdrop" id="authModal">
+      <div class="modal-dialog modal-auth">
+        <div class="modal-header">
+          <h3 id="authModalTitle"><i class="fa-solid fa-user-lock"></i> Account Access</h3>
+          <button class="icon-btn modal-close-btn" id="closeAuthModalBtn" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="tabLoginBtn">Sign In</button>
+          <button class="auth-tab-btn" id="tabRegisterBtn">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="modal-form auth-form active">
+          <div class="form-group">
+            <label for="loginEmail" class="required">Email Address</label>
+            <input type="email" id="loginEmail" class="form-control" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword" class="required">Password</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In to Account
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="modal-form auth-form">
+          <div class="form-group">
+            <label for="regName" class="required">Full Name</label>
+            <input type="text" id="regName" class="form-control" placeholder="Sayali Shinde" required>
+          </div>
+          <div class="form-group">
+            <label for="regEmail" class="required">Email Address</label>
+            <input type="email" id="regEmail" class="form-control" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="regPassword" class="required">Password (min. 6 characters)</label>
+            <input type="password" id="regPassword" class="form-control" placeholder="••••••••" required minlength="6">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="registerSubmitBtn">
+            <i class="fa-solid fa-user-plus"></i> Create New Account
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  </div>
+
+  <!-- Client-side Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
